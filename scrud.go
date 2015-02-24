@@ -10,12 +10,12 @@
 //  db, err := scrud.Open("mysql", "user:password@/database")
 //
 //  // A, B is struct or *struct
-//  n, err := db.Insert(A)           // insert
-//  n, err = db.Insert([]A{})        // batch insert
-//  err = db.Select(&A)              // select by primary key
-//  err = db.SelectRelation("B", &A) // select relation field
-//  err = db.Update(A)               // update by primary key
-//  err = db.Delete(A)               // delete by primary key
+//  n, err := db.Insert(A)                // insert
+//  n, err = db.Insert([]A{})             // batch insert
+//  err = db.Select(&A, ...)              // select by primary key, support include or exclude columns
+//  err = db.SelectRelation("B", &A, ...) // select relation field, support include or exclude columns
+//  err = db.Update(A, ...)               // update by primary key, support include or exclude columns
+//  err = db.Delete(A)                    // delete by primary key
 //
 //  m2m := db.ManyToMany("B", A) // many to many field manager
 //  err = m2m.Add(B, ...)        // add relation
