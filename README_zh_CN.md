@@ -55,7 +55,7 @@ query, args, err = Select(
 ).From("Table1", ...).LeftJoin("Table2", // LEFT JOIN `Table2` USING (`Column2`, ...)
 	"Column2", // -- join using when string
 	...
-//  ).RightJoin("Table3", // LEFT JOIN `Table3` ON `Column4`=? AND `Table1`.`Column1`+`Table3`.`Column1`>? ... -- true, 1
+).RightJoin("Table3", // LEFT JOIN `Table3` ON `Column4`=? AND `Table1`.`Column1`+`Table3`.`Column1`>? ... -- true, 1
 	Eq("Column4", true),                            // -- join on when Condition
 	Cond("`Table1.Column1`+`Table3.Column1`>?", 1), // -- AND
 	...
@@ -137,7 +137,7 @@ type Columner interface {
 ### 主键
 仅支持单主键(primary_key)  
 如果没有主键，则自动递增默认为主键  
-如果没有主键和自动递增，则名为Id且类型为ints或uints的字段设置为主键和自动递增  
+如果没有主键和自动递增，则名为`Id`且类型为ints或uints的字段设置为主键和自动递增  
 
 ### 关系
 ```
