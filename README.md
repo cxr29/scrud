@@ -95,6 +95,9 @@ query, args, err = Delete("Table1").Where(
 ).Limit(...).Expand(...)
 ```
 
+### [Expression](http://godoc.org/github.com/cxr29/scrud/query#Expression) and [Condition](http://godoc.org/github.com/cxr29/scrud/query#Condition)
+Build any sql clause contains identifier and placeholder with arguments like raw sql
+
 ### Documentation
 API documentation can be found here: [http://godoc.org/github.com/cxr29/scrud](http://godoc.org/github.com/cxr29/scrud)
 

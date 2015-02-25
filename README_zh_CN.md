@@ -95,6 +95,9 @@ query, args, err = Delete("Table1").Where(
 ).Limit(...).Expand(...)
 ```
 
+### [Expression](http://godoc.org/github.com/cxr29/scrud/query#Expression)和[Condition](http://godoc.org/github.com/cxr29/scrud/query#Condition)
+像写原生SQL一样轻松编写任何SQL语句，自动处理标识符及参数
+
 ### 文档
 API文档位于：[http://godoc.org/github.com/cxr29/scrud](http://godoc.org/github.com/cxr29/scrud)
 
