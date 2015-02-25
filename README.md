@@ -110,10 +110,10 @@ many to many tag: `scrud:"TableName|LeftColumnName|RigthColumnName,option,..."`
 
 ### Name
 ```
-             table: Tabler    > format.TableName
-            column: field tag > Columner > format.ColumnName
-   relation column: field tag > Columner > format.ColumnName
-many to many table: field tag > format.ManyToManyTableName
+             table: Tabler    > [format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
+            column: field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
+   relation column: field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
+many to many table: field tag > [format.ManyToManyTableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
 ```
 ```Go
 type Tabler interface {

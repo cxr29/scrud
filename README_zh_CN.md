@@ -110,10 +110,10 @@ API文档位于：[http://godoc.org/github.com/cxr29/scrud](http://godoc.org/git
 
 ### 命名
 ```
-        表：Tabler    > format.TableName
-        列：field tag > Columner > format.ColumnName
-    关系列：field tag > Columner > format.ColumnName
-  多对多表：field tag > format.ManyToManyTableName
+        表：Tabler    > [format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
+        列：field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
+    关系列：field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
+  多对多表：field tag > [format.ManyToManyTableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
 ```
 ```Go
 type Tabler interface {
