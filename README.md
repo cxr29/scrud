@@ -102,19 +102,16 @@ Build any sql clause contains identifier and placeholder with arguments like raw
 API documentation can be found here: [http://godoc.org/github.com/cxr29/scrud](http://godoc.org/github.com/cxr29/scrud)
 
 ### Struct Definition
-```
-             tag: `scrud:"ColumnName,option,..."`
-many to many tag: `scrud:"TableName|LeftColumnName|RigthColumnName,option,..."`
-         options: primary_key, auto_increment, auto_now_add, auto_now, one_to_one, one_to_many, many_to_one/foreign_key, many_to_many
-```
+`             tag: `\`scrud:"ColumnName,option,..."\`  
+`many to many tag: `\`scrud:"TableName|LeftColumnName|RigthColumnName,option,..."\`  
+`         options: `primary_key, auto_increment, auto_now_add, auto_now, one_to_one, one_to_many, many_to_one/foreign_key, many_to_many  
 
 ### Name
-```
-             table: Tabler    > [format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-            column: field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-   relation column: field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-many to many table: field tag > [format.ManyToManyTableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-```
+`             table: Tabler    > `[format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+`            column: field tag > Columner > `[format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+`   relation column: field tag > Columner > `[format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+`many to many table: field tag > `[format.ManyToManyTableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+
 ```Go
 type Tabler interface {
 	// return table name

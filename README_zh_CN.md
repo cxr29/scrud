@@ -102,19 +102,16 @@ query, args, err = Delete("Table1").Where(
 API文档位于：[http://godoc.org/github.com/cxr29/scrud](http://godoc.org/github.com/cxr29/scrud)
 
 ### 结构体定义
-```
-      标签：`scrud:"ColumnName,option,..."`
-多对多标签：`scrud:"TableName|LeftColumnName|RigthColumnName,option,..."`
-  标签选项：primary_key, auto_increment, auto_now_add, auto_now, one_to_one, one_to_many, many_to_one/foreign_key, many_to_many
-```
+`      标签：`\`scrud:"ColumnName,option,..."\`  
+`多对多标签：`\`scrud:"TableName|LeftColumnName|RigthColumnName,option,..."\`  
+`  标签选项：`primary_key, auto_increment, auto_now_add, auto_now, one_to_one, one_to_many, many_to_one/foreign_key, many_to_many  
 
 ### 命名
-```
-        表：Tabler    > [format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-        列：field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-    关系列：field tag > Columner > [format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-  多对多表：field tag > [format.ManyToManyTableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)
-```
+`      表：Tabler    > `[format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+`      列：field tag > Columner > `[format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+`  关系列：field tag > Columner > `[format.ColumnName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+`多对多表：field tag > `[format.ManyToManyTableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  
+
 ```Go
 type Tabler interface {
 	// return table name
