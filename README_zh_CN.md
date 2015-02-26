@@ -55,7 +55,7 @@ query, args, err = Select(
 ).From("Table1", ...).LeftJoin("Table2", // LEFT JOIN `Table2` USING (`Column2`, ...)
 	"Column2", // -- join using when string
 	...
-).RightJoin("Table3", // LEFT JOIN `Table3` ON `Column4`=? AND `Table1`.`Column1`+`Table3`.`Column1`>? ... -- true, 1
+).RightJoin("Table3", // RIGHT JOIN `Table3` ON `Column4`=? AND `Table1`.`Column1`+`Table3`.`Column1`>? ... -- true, 1
 	Eq("Column4", true),                            // -- join on when Condition
 	Cond("`Table1.Column1`+`Table3.Column1`>?", 1), // -- AND
 	...
