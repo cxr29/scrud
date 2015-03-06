@@ -28,9 +28,11 @@ err = m2m.Remove(B, ...)     // remove relation
 has, err := m2m.Has(B)       // check relation
 err = m2m.Empty()            // empty relation
 
-result, err := db.Run(qe)      // run a query expression that doesn't return rows
-err = db.Fetch(qe).One(&A)     // run a query expression and fetch one row to struct
-err = db.Fetch(qe).All(&[]A{}) // run a query expression and fetch rows to slice of struct
+result, err := db.Run(qe)          // run a query expression that doesn't return rows
+err = db.Fetch(qe).One(&A)         // run a query expression and fetch one row to struct
+err = db.Fetch(qe).All(&[]A{})     // run a query expression and fetch rows to slice of struct
+m, err := db.Fetch(qe).MapOne(nil) // run a query expression and fetch one row as map, support set column type
+a, err := db.Fetch(qe).MapAll(nil) // run a query expression and fetch rows as slice of map, support set column type
 ```
 
 ### SQL

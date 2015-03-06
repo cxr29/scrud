@@ -24,9 +24,11 @@
 //  has, err := m2m.Has(B)       // check relation
 //  err = m2m.Empty()            // empty relation
 //
-//  result, err := db.Run(qe)      // run a query expression that doesn't return rows
-//  err = db.Fetch(qe).One(&A)     // run a query expression and fetch one row to struct
-//  err = db.Fetch(qe).All(&[]A{}) // run a query expression and fetch rows to slice of struct
+//  result, err := db.Run(qe)          // run a query expression that doesn't return rows
+//  err = db.Fetch(qe).One(&A)         // run a query expression and fetch one row to struct
+//  err = db.Fetch(qe).All(&[]A{})     // run a query expression and fetch rows to slice of struct
+//  m, err := db.Fetch(qe).MapOne(nil) // run a query expression and fetch one row as map, support set column type
+//  a, err := db.Fetch(qe).MapAll(nil) // run a query expression and fetch rows as slice of map, support set column type
 //
 // See https://github.com/cxr29/scrud for more details
 package scrud
@@ -41,8 +43,6 @@ import (
 	"github.com/cxr29/scrud/internal/table"
 	. "github.com/cxr29/scrud/query"
 )
-
-var ErrNoRows = sql.ErrNoRows
 
 func starter(s string) Starter {
 	switch s {
@@ -454,7 +454,7 @@ func fetch(xr faker, query Expression) *Rows {
 	if err != nil {
 		return &Rows{err: err}
 	}
-	return &Rows{Rows: rows, cols: cols}
+	return &Rows{Rows: rows, cnt: len(cols), cols: cols}
 }
 
 func run(xr faker, query Expression) (sql.Result, error) {
@@ -583,177 +583,6 @@ func (tx *Tx) Fetch(query Expression) *Rows {
 
 func (tx *Tx) Run(query Expression) (sql.Result, error) {
 	return run(tx, query)
-}
-
-type Rows struct {
-	err error
-	*sql.Rows
-	cols []string
-}
-
-func (r *Rows) Err() error {
-	if r.err != nil {
-		return r.err
-	}
-
-	return r.Rows.Err()
-}
-
-func (r *Rows) columns(x *table.Table) ([]*table.Column, error) {
-	m := make(map[int]struct{})
-	cols := make([]*table.Column, 0, len(r.cols))
-	for _, i := range r.cols {
-		c := x.FindColumn(i)
-		if c == nil {
-			return nil, fmt.Errorf("scrud: scan column not found: %s/%s", x.Type.Name(), i)
-		}
-		if c.IsManyRelation() {
-			return nil, errors.New("scrud: scan many relation column: " + c.FullName())
-		}
-		if _, ok := m[c.Index]; ok {
-			return nil, errors.New("scrud: scan column repeat: " + c.FullName())
-		} else {
-			m[c.Index] = struct{}{}
-		}
-		cols = append(cols, c)
-	}
-	return cols, nil
-}
-
-// scan one row to struct
-func (r *Rows) Scan(i interface{}) error {
-	if r.err != nil {
-		return r.err
-	}
-
-	v := reflect.ValueOf(i)
-	t := v.Type()
-	if t.Kind() != reflect.Ptr {
-		return errors.New("scrud: scan need pointer")
-	}
-	t = t.Elem()
-	if t.Kind() != reflect.Struct {
-		return errors.New("scrud: scan need struct")
-	}
-
-	x, err := table.TableOf(t)
-	if err != nil {
-		return err
-	}
-
-	cols, err := r.columns(x)
-	if err != nil {
-		return err
-	}
-
-	if v.IsNil() {
-		v.Set(reflect.New(t))
-	}
-	v = v.Elem()
-
-	return r.scan(cols, v)
-}
-
-func (r *Rows) scan(cols []*table.Column, v reflect.Value) error {
-	set := make(map[int]*table.Column)
-	scans := make([]interface{}, 0, len(cols))
-	for _, c := range cols {
-		if c.HasSetter() {
-			set[len(scans)] = c
-		}
-		scans = append(scans, c.Scan(v))
-	}
-
-	if err := r.Rows.Scan(scans...); err != nil {
-		return err
-	}
-
-	for i, c := range set {
-		if err := c.SetValue(v, reflect.ValueOf(scans[i]).Elem().Interface()); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// scan one row to struct then close the rows
-func (r *Rows) One(i interface{}) error {
-	if r.err != nil {
-		return r.err
-	}
-
-	defer r.Close()
-
-	if r.Next() {
-		return r.Scan(i)
-	} else {
-		return ErrNoRows
-	}
-}
-
-// scan rows to slice of struct then close the rows
-func (r *Rows) All(i interface{}) (err error) {
-	if r.err != nil {
-		return r.err
-	}
-
-	defer r.Close()
-
-	ptr := false
-
-	v := reflect.ValueOf(i)
-	t := v.Type()
-
-	if t.Kind() != reflect.Ptr {
-		return errors.New("scrud: all need pointer")
-	} else if v.IsNil() {
-		return errors.New("scrud: all nil")
-	} else {
-		t = t.Elem()
-	}
-
-	if t.Kind() != reflect.Slice {
-		return errors.New("scrud: all need slice of struct")
-	} else {
-		t = t.Elem()
-	}
-
-	if t.Kind() == reflect.Ptr {
-		ptr = true
-		t = t.Elem()
-	}
-	if t.Kind() != reflect.Struct {
-		return errors.New("scrud: all need slice of struct")
-	}
-
-	x, err := table.TableOf(t)
-	if err != nil {
-		return err
-	}
-
-	cols, err := r.columns(x)
-	if err != nil {
-		return err
-	}
-
-	v = v.Elem()
-	if v.Len() != 0 {
-		v.SetLen(0)
-	}
-
-	for r.Next() {
-		j := reflect.New(t).Elem()
-		if err := r.scan(cols, j); err != nil {
-			return err
-		}
-		if ptr {
-			j = j.Addr()
-		}
-		v.Set(reflect.Append(v, j))
-	}
-
-	return r.Err()
 }
 
 // many to many field manager

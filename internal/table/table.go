@@ -72,6 +72,7 @@ func (t *Table) FindColumn(s string) *Column {
 
 type Column struct {
 	Table              *Table
+	Type               reflect.Type
 	Index              int
 	Field              string
 	Name               string // many_to_many is table name
@@ -552,6 +553,7 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 
 		c := &Column{
 			Table:  table,
+			Type:   f.Type,
 			Index:  i,
 			Field:  f.Name,
 			Getter: -1,
