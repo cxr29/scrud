@@ -183,15 +183,13 @@ func (r *Rows) All(i interface{}) (err error) {
 	return r.Err()
 }
 
-var typeString = reflect.TypeOf("")
-
 func (r *Rows) types(i interface{}) ([]reflect.Type, error) {
 	a := make([]reflect.Type, r.cnt)
 	m := make(map[string]struct{}, r.cnt)
 	switch x := i.(type) {
-	case nil:
-		for i := range a {
-			a[i] = typeString
+	case nil, string:
+		for j := range a {
+			a[j] = table.TypeString
 		}
 	case []interface{}:
 		if len(x) != r.cnt {
@@ -218,35 +216,52 @@ func (r *Rows) types(i interface{}) ([]reflect.Type, error) {
 			if j, ok := x[v]; ok {
 				a[k] = reflect.TypeOf(j)
 			} else {
-				a[k] = typeString
+				a[k] = table.TypeString
 			}
 		}
 	default:
-		t, err := table.NewTable(i)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range r.cols {
-			if _, ok := m[v]; ok {
-				return nil, errors.New("scrud: map scan column repeat: " + v)
-			} else {
-				m[v] = struct{}{}
+		switch t := reflect.TypeOf(i); t.Kind() {
+		case reflect.Bool,
+			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+			reflect.Float32, reflect.Float64:
+			for j := range a {
+				a[j] = t
 			}
+		default:
+			switch t {
+			case table.TypeTime, table.TypeByteSlice:
+				for j := range a {
+					a[j] = t
+				}
+			default:
+				x, err := table.NewTable(i)
+				if err != nil {
+					return nil, err
+				}
+				for k, v := range r.cols {
+					if _, ok := m[v]; ok {
+						return nil, errors.New("scrud: map scan column repeat: " + v)
+					} else {
+						m[v] = struct{}{}
+					}
 
-			if c := t.FindColumn(v); c != nil {
-				if c.IsManyRelation() {
-					return nil, errors.New("scrud: map scan many relation column: " + c.FullName())
+					if c := x.FindColumn(v); c != nil {
+						if c.IsManyRelation() {
+							return nil, errors.New("scrud: map scan many relation column: " + c.FullName())
+						}
+						for c.IsOneRelation() {
+							c = c.RelationTable.PrimaryKey
+						}
+						if c.HasSetter() {
+							a[k] = c.SetType
+						} else {
+							a[k] = c.Type
+						}
+					} else {
+						a[k] = table.TypeString
+					}
 				}
-				for c.IsOneRelation() {
-					c = c.RelationTable.PrimaryKey
-				}
-				if c.HasSetter() {
-					a[k] = c.SetType
-				} else {
-					a[k] = c.Type
-				}
-			} else {
-				a[k] = typeString
 			}
 		}
 	}
@@ -277,7 +292,7 @@ func (r *Rows) mapScan(a []reflect.Type) (map[string]interface{}, error) {
 	return data, nil
 }
 
-// i: column type, nil or []interface{} or map[string]interface{} or struct
+// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/struct
 //
 // if struct, setter column will be the setter type and not call the setter
 func (r *Rows) MapScan(i interface{}) (map[string]interface{}, error) {
@@ -294,7 +309,7 @@ func (r *Rows) MapScan(i interface{}) (map[string]interface{}, error) {
 
 // scan one row as map then close the rows
 //
-// i: column type, nil or []interface{} or map[string]interface{} or struct
+// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/struct
 //
 // if struct, setter column will be the setter type and not call the setter
 func (r *Rows) MapOne(i interface{}) (map[string]interface{}, error) {
@@ -313,7 +328,7 @@ func (r *Rows) MapOne(i interface{}) (map[string]interface{}, error) {
 
 // scan rows as slice of map then close the rows
 //
-// i: column types, nil or []interface{} or map[string]interface{} or struct
+// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/struct
 //
 // if struct, setter column will be the setter type and not call the setter
 func (r *Rows) MapAll(i interface{}) ([]map[string]interface{}, error) {

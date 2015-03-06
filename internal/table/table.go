@@ -319,7 +319,7 @@ func (c *Column) SetValue(v reflect.Value, i interface{}) error {
 		in := make([]reflect.Value, 1)
 		if c.SetType == typeInterface {
 			in[0] = reflect.ValueOf(i)
-		} else if c.SetType == typeByteSlice {
+		} else if c.SetType == TypeByteSlice {
 			if i != nil {
 				if x, ok := i.([]byte); ok {
 					in[0] = reflect.ValueOf(x)
@@ -331,7 +331,7 @@ func (c *Column) SetValue(v reflect.Value, i interface{}) error {
 			} else {
 				in[0] = reflect.ValueOf(i)
 			}
-		} else if c.SetType == typeTime {
+		} else if c.SetType == TypeTime {
 			if x, ok := i.(time.Time); ok {
 				in[0] = reflect.ValueOf(x)
 			} else {
@@ -584,7 +584,7 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 					if table.AutoNowAdd != nil {
 						return nil, errors.New("table: more than one auto_now_add: " + t.Name())
 					}
-					if f.Type != typeTime {
+					if f.Type != TypeTime {
 						return nil, errors.New("table: auto_now_add not time.Time: " + c.FullName())
 					}
 					if table.AutoNow != nil && table.AutoNow.Index == c.Index {
@@ -595,7 +595,7 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 					if table.AutoNow != nil {
 						return nil, errors.New("table: more than one auto_now: " + t.Name())
 					}
-					if f.Type != typeTime {
+					if f.Type != TypeTime {
 						return nil, errors.New("table: auto_now not time.Time: " + c.FullName())
 					}
 					if table.AutoNowAdd != nil && table.AutoNowAdd.Index == c.Index {
@@ -762,8 +762,9 @@ var (
 	typeScanner   = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 	typeError     = reflect.TypeOf((*error)(nil)).Elem()
 	typeInterface = reflect.TypeOf((*interface{})(nil)).Elem()
-	typeByteSlice = reflect.TypeOf(([]byte)(nil))
-	typeTime      = reflect.TypeOf(time.Time{})
+	TypeString    = reflect.TypeOf("")
+	TypeByteSlice = reflect.TypeOf(([]byte)(nil))
+	TypeTime      = reflect.TypeOf(time.Time{})
 )
 
 func autoIncrement(k reflect.Kind) int8 {
@@ -777,7 +778,7 @@ func autoIncrement(k reflect.Kind) int8 {
 }
 
 func isValueType(t reflect.Type) bool {
-	if t == typeInterface || t == typeByteSlice || t == typeTime {
+	if t == typeInterface || t == TypeByteSlice || t == TypeTime {
 		return true
 	}
 	switch t.Kind() {
