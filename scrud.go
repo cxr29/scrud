@@ -378,7 +378,7 @@ func update(xr faker, data interface{}, columns ...string) error {
 	count := len(columnMap)
 
 	for _, c := range x.Columns {
-		if c.IsManyRelation() || c.PrimaryKey() {
+		if c.IsManyRelation() || c.PrimaryKey() || c.AutoNowAdd() {
 			continue
 		}
 		if c.AutoNow() { // cxr? always update
