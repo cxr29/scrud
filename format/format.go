@@ -32,6 +32,11 @@ var (
 			return a[1] + a[3]
 		}
 	}
+	// struct name, table name
+	// return snapshot table name, id column name, time column name
+	SnapshotName = func(s, t string) (string, string, string) {
+		return "Snapshot" + s, "SnapshotId", "SnapshotTime"
+	}
 )
 
 // ignore camel's underline, first upper not add underline
