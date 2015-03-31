@@ -318,7 +318,7 @@ func retrieve(xr faker, data interface{}, columns ...string) error {
 			}
 		}
 		elect = append(elect, c.Name)
-		if c.HasSetter() {
+		if c.HasEncoding() || c.HasSetter() {
 			set[len(scans)] = c
 		}
 		scans = append(scans, c.Scan(v))

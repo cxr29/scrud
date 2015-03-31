@@ -86,7 +86,7 @@ func (r *Rows) scan(cols []*table.Column, v reflect.Value) error {
 	scans := make([]interface{}, len(cols))
 	for i, c := range cols {
 		scans[i] = c.Scan(v)
-		if c.HasSetter() {
+		if c.HasEncoding() || c.HasSetter() {
 			set[i] = c
 		}
 	}
@@ -253,7 +253,9 @@ func (r *Rows) types(i interface{}) ([]reflect.Type, error) {
 						for c.IsOneRelation() {
 							c = c.RelationTable.PrimaryKey
 						}
-						if c.HasSetter() {
+						if c.HasEncoding() {
+							a[k] = table.TypeByteSlice
+						} else if c.HasSetter() {
 							a[k] = c.SetType
 						} else {
 							a[k] = c.Type

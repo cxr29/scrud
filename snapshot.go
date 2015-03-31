@@ -120,7 +120,7 @@ func (s *Snapshot) Select(id int64, data interface{}, columns ...string) (time.T
 			}
 		}
 		elect = append(elect, c.Name)
-		if c.HasSetter() {
+		if c.HasEncoding() || c.HasSetter() {
 			set[len(scans)] = c
 		}
 		scans = append(scans, c.Scan(v))

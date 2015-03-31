@@ -5,8 +5,11 @@
 package table
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -83,6 +86,7 @@ type Column struct {
 	GetType, SetType   reflect.Type
 	GetError, SetError bool
 	GetPointer         bool
+	Encoding           string // json or gob
 	// many_to_many only
 	NameLeft, NameRight       string
 	ThroughTable              *Table
@@ -90,8 +94,8 @@ type Column struct {
 }
 
 func (c *Column) init(x map[reflect.Type]*Table) error {
-	if c.Relation != 0 && (c.HasGetter() || c.HasSetter()) {
-		return errors.New("table: relation field not allow getter and setter: " + c.FullName())
+	if c.Relation != 0 && (c.HasEncoding() || c.HasGetter() || c.HasSetter()) {
+		return errors.New("table: relation field not allow encoding, getter and setter: " + c.FullName())
 	}
 
 	switch c.Relation {
@@ -243,6 +247,10 @@ func (c *Column) IsManyRelation() bool {
 	return isManyRelation(c.Relation)
 }
 
+func (c *Column) HasEncoding() bool {
+	return c.Encoding != ""
+}
+
 func (c *Column) HasGetter() bool {
 	return c.Getter != -1
 }
@@ -272,7 +280,17 @@ func (c *Column) GetValue(v reflect.Value) (interface{}, error) {
 		return c.RelationTable.PrimaryKey.GetValue(v)
 	}
 
-	if c.HasGetter() {
+	if c.HasEncoding() {
+		v = v.Field(c.Index)
+		switch c.Encoding {
+		case "json":
+			return json.Marshal(v.Interface())
+		case "gob":
+			buf := new(bytes.Buffer)
+			err := gob.NewEncoder(buf).EncodeValue(v)
+			return buf.Bytes(), err
+		}
+	} else if c.HasGetter() {
 		var m reflect.Value
 		if c.GetPointer {
 			if !v.CanAddr() {
@@ -312,7 +330,20 @@ func (c *Column) SetValue(v reflect.Value, i interface{}) error {
 		return c.RelationTable.PrimaryKey.SetValue(v, i)
 	}
 
-	if c.HasSetter() {
+	if c.HasEncoding() {
+		v = v.Field(c.Index)
+		p, ok := i.([]byte)
+		if !ok || !v.CanAddr() {
+			return errors.New("table: encoding need pointer receiver and bytes: " + c.FullName())
+		}
+		v = v.Addr()
+		switch c.Encoding {
+		case "json":
+			return json.Unmarshal(p, v.Interface())
+		case "gob":
+			return gob.NewDecoder(bytes.NewReader(p)).DecodeValue(v)
+		}
+	} else if c.HasSetter() {
 		if !v.CanAddr() {
 			return errors.New("table: setter need pointer receiver: " + c.FullName())
 		}
@@ -434,7 +465,9 @@ func (c *Column) Scan(v reflect.Value) interface{} {
 		panic("table: scan type mismatching: " + c.FullName())
 	}
 
-	if c.HasSetter() {
+	if c.HasEncoding() {
+		return &[]byte{}
+	} else if c.HasSetter() {
 		return reflect.New(c.SetType).Interface()
 	} else {
 		fv := v.Field(c.Index)
@@ -602,6 +635,11 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 						return nil, errors.New("table: auto_now and auto_now_add both appear: " + c.FullName())
 					}
 					table.AutoNow = c
+				case "json", "gob":
+					if c.HasEncoding() {
+						return nil, errors.New("table: more than one encoding: " + c.FullName())
+					}
+					c.Encoding = o
 				default:
 					if r, ok := relations[o]; ok {
 						if c.Relation != 0 {
@@ -674,6 +712,10 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 			}
 		}
 
+		if c.HasEncoding() && (c.HasGetter() || c.HasSetter()) {
+			return nil, errors.New("table: encoding conflict with getter and setter: " + c.FullName())
+		}
+
 		table.Columns = append(table.Columns, c)
 	}
 
@@ -699,18 +741,18 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 	}
 
 	if table.AutoIncrement != nil &&
-		(table.AutoIncrement.HasGetter() || table.AutoIncrement.HasSetter()) {
-		return nil, errors.New("table: auto_increment not allow getter and setter: " + table.AutoIncrement.FullName())
+		(table.AutoIncrement.HasEncoding() || table.AutoIncrement.HasGetter() || table.AutoIncrement.HasSetter()) {
+		return nil, errors.New("table: auto_increment not allow encoding, getter and setter: " + table.AutoIncrement.FullName())
 	}
 
 	if table.AutoNowAdd != nil &&
-		(table.AutoNowAdd.HasGetter() || table.AutoNowAdd.HasSetter()) {
-		return nil, errors.New("table: auto_now_add not allow getter and setter: " + table.AutoNowAdd.FullName())
+		(table.AutoNowAdd.HasEncoding() || table.AutoNowAdd.HasGetter() || table.AutoNowAdd.HasSetter()) {
+		return nil, errors.New("table: auto_now_add not allow encoding, getter and setter: " + table.AutoNowAdd.FullName())
 	}
 
 	if table.AutoNow != nil &&
-		(table.AutoNow.HasGetter() || table.AutoNow.HasSetter()) {
-		return nil, errors.New("table: auto_now not allow getter and setter: " + table.AutoNow.FullName())
+		(table.AutoNow.HasEncoding() || table.AutoNow.HasGetter() || table.AutoNow.HasSetter()) {
+		return nil, errors.New("table: auto_now not allow encoding, getter and setter: " + table.AutoNow.FullName())
 	}
 
 	if table.PrimaryKey != nil {
