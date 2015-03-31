@@ -107,6 +107,7 @@ API documentation can be found here: [http://godoc.org/github.com/cxr29/scrud](h
 `             tag: `\`scrud:"ColumnName,option,..."\`  
 `many to many tag: `\`scrud:"TableName|LeftColumnName|RigthColumnName,option,..."\`  
 `         options: `primary_key, auto_increment, auto_now_add, auto_now, one_to_one, one_to_many, many_to_one/foreign_key, many_to_many  
+`encoding options: `json, gob  
 
 ### Name
 `             table: Tabler    > `[format.TableName](http://godoc.org/github.com/cxr29/scrud/format#pkg-variables)  

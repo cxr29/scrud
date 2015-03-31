@@ -310,6 +310,58 @@ func (c *Column) GetValue(v reflect.Value) (interface{}, error) {
 	return v.Field(c.Index).Interface(), nil
 }
 
+func (c *Column) Set(v reflect.Value, i interface{}) error {
+	if t := v.Type(); t != c.Table.Type {
+		return errors.New("table: set type mismatching: " + c.FullName())
+	}
+
+	v = v.Field(c.Index)
+
+	if v.CanSet() && (func() (ok bool) {
+		defer func() {
+			if recover() != nil {
+				ok = false
+			}
+		}()
+		v.Set(reflect.ValueOf(i))
+		return true
+	}()) {
+		return nil
+	}
+
+	return errors.New("table: set failed: " + c.FullName())
+}
+
+func (c *Column) Decode(p []byte) (interface{}, error) {
+	if !c.HasEncoding() {
+		return nil, errors.New("table: decode need encoding: " + c.FullName())
+	}
+
+	ptr, t := false, c.Type
+	if t.Kind() == reflect.Ptr {
+		ptr = true
+		t = t.Elem()
+	}
+	v := reflect.New(t)
+
+	var err error
+	switch c.Encoding {
+	case "json":
+		err = json.Unmarshal(p, v.Interface())
+	case "gob":
+		err = gob.NewDecoder(bytes.NewReader(p)).DecodeValue(v)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if ptr {
+		return v.Interface(), nil
+	} else {
+		return v.Elem().Interface(), nil
+	}
+}
+
 // many relation set the field value
 func (c *Column) SetValue(v reflect.Value, i interface{}) error {
 	if t := v.Type(); t != c.Table.Type {
@@ -331,18 +383,19 @@ func (c *Column) SetValue(v reflect.Value, i interface{}) error {
 	}
 
 	if c.HasEncoding() {
-		v = v.Field(c.Index)
 		p, ok := i.([]byte)
-		if !ok || !v.CanAddr() {
-			return errors.New("table: encoding need pointer receiver and bytes: " + c.FullName())
+		if !ok {
+			if s, ok := i.(string); !ok {
+				goto failed
+			} else {
+				p = []byte(s)
+			}
 		}
-		v = v.Addr()
-		switch c.Encoding {
-		case "json":
-			return json.Unmarshal(p, v.Interface())
-		case "gob":
-			return gob.NewDecoder(bytes.NewReader(p)).DecodeValue(v)
+		i, err := c.Decode(p)
+		if err != nil {
+			return err
 		}
+		return c.Set(v, i)
 	} else if c.HasSetter() {
 		if !v.CanAddr() {
 			return errors.New("table: setter need pointer receiver: " + c.FullName())
@@ -488,7 +541,7 @@ func (c *Column) Scan(v reflect.Value) interface{} {
 				}
 			}
 		}
-		if fv.Kind() == reflect.Ptr { // cxr? *int
+		if fv.Kind() == reflect.Ptr {
 			if fv.IsNil() {
 				fv.Set(reflect.New(fv.Type().Elem()))
 			}

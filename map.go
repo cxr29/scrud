@@ -13,7 +13,7 @@ func StructToMap(data interface{}, columns ...string) (map[string]interface{}, e
 	t := v.Type()
 	if v.Kind() == reflect.Ptr {
 		if v.IsNil() {
-			return nil, errors.New("scrud: s2m nil")
+			return nil, errors.New("scrud: struct to map nil")
 		}
 		v = v.Elem()
 		t = v.Type()
@@ -24,7 +24,7 @@ func StructToMap(data interface{}, columns ...string) (map[string]interface{}, e
 		return nil, err
 	}
 
-	columnMap, exclude, err := tidyColumns("s2m", x, columns...)
+	columnMap, exclude, err := tidyColumns("struct to map", x, columns...)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,9 @@ func StructToMap(data interface{}, columns ...string) (map[string]interface{}, e
 				continue
 			}
 		}
-		if i, err := c.GetValue(v); err != nil {
+		if c.HasEncoding() {
+			m[c.Name] = v.Field(c.Index).Interface()
+		} else if i, err := c.GetValue(v); err != nil {
 			return nil, err
 		} else {
 			m[c.Name] = i
@@ -56,10 +58,10 @@ func MapToStruct(data interface{}, m map[string]interface{}) error {
 	v := reflect.ValueOf(data)
 	t := v.Type()
 	if v.Kind() != reflect.Ptr {
-		return errors.New("scrud: m2s need pointer")
+		return errors.New("scrud: map to struct need pointer")
 	}
 	if v.IsNil() {
-		return errors.New("scrud: m2s nil")
+		return errors.New("scrud: map to struct nil")
 	}
 	v = v.Elem()
 	t = v.Type()
@@ -76,8 +78,16 @@ func MapToStruct(data interface{}, m map[string]interface{}) error {
 
 		if i, ok := m[c.Name]; !ok {
 			continue
-		} else if err := c.SetValue(v, i); err != nil {
-			return err
+		} else {
+			var err error
+			if c.HasEncoding() {
+				err = c.Set(v, i)
+			} else {
+				err = c.SetValue(v, i)
+			}
+			if err != nil {
+				return err
+			}
 		}
 	}
 
