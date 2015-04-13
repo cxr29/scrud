@@ -80,6 +80,7 @@ type Column struct {
 	Field              string
 	Name               string // many_to_many is table name
 	Relation           int
+	RelationType       reflect.Type
 	RelationTable      *Table
 	Valuer, Scanner    bool
 	Getter, Setter     int
@@ -94,14 +95,22 @@ type Column struct {
 }
 
 func (c *Column) init(x map[reflect.Type]*Table) error {
-	if c.Relation != 0 && (c.HasEncoding() || c.HasGetter() || c.HasSetter()) {
-		return errors.New("table: relation field not allow encoding, getter and setter: " + c.FullName())
+	if c.Relation != 0 {
+		if c.HasEncoding() || c.HasGetter() || c.HasSetter() {
+			return errors.New("table: relation field not allow encoding, getter and setter: " + c.FullName())
+		}
+
+		var err error
+		c.RelationTable, err = tableOf(c.RelationType, x)
+		if err != nil {
+			return err
+		}
 	}
 
 	switch c.Relation {
 	case OneToMany, ManyToMany:
 		if c.Table.PrimaryKey == nil {
-			return errors.New("table: relation struct need primary_key: " + c.Table.Type.Name())
+			return errors.New("table: struct need primary_key: " + c.FullName())
 		}
 	}
 
@@ -109,7 +118,7 @@ func (c *Column) init(x map[reflect.Type]*Table) error {
 	switch c.Relation {
 	case OneToOne, ManyToOne, ManyToMany:
 		if rt.PrimaryKey == nil {
-			return errors.New("table: relation struct need primary_key: " + rt.Type.Name())
+			return errors.New("table: relation struct need primary_key: " + c.FullName())
 		}
 	}
 
@@ -718,12 +727,8 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 							}
 						}
 
-						rt, err := tableOf(ft, x)
-						if err != nil {
-							return nil, err
-						}
 						c.Relation = r
-						c.RelationTable = rt
+						c.RelationType = ft
 					} else {
 						return nil, fmt.Errorf("table: unknown option: %s/%s", c.FullName(), o)
 					}
