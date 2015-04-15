@@ -47,7 +47,7 @@ func (s *Snapshot) Insert(data interface{}) (int64, time.Time, error) {
 
 	st := time.Now()
 	i.Columns(timeName)
-	i.Values(st)
+	values := []interface{}{st}
 
 	for _, c := range x.Columns {
 		if c.IsManyRelation() {
@@ -57,9 +57,10 @@ func (s *Snapshot) Insert(data interface{}) (int64, time.Time, error) {
 			return 0, zt, err
 		} else {
 			i.Columns(c.Name)
-			i.Values(v)
+			values = append(values, v)
 		}
 	}
+	i.Values(values)
 
 	q, a, err := i.Expand(s.xr.Starter())
 	if err != nil {
