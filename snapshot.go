@@ -60,7 +60,7 @@ func (s *Snapshot) Insert(data interface{}) (int64, time.Time, error) {
 			values = append(values, v)
 		}
 	}
-	i.Values(values)
+	i.Values(values...)
 
 	q, a, err := i.Expand(s.xr.Starter())
 	if err != nil {
