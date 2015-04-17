@@ -227,6 +227,10 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 	}
 
 	if r.offset > 0 {
+		if r.limit <= 0 {
+			buf.WriteString(" LIMIT 2147483647 ")
+		}
+
 		buf.WriteString(" OFFSET ")
 		buf.WriteString(strconv.Itoa(r.offset))
 	}
