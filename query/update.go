@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"strconv"
+	"time"
 )
 
 type set struct {
@@ -114,6 +115,11 @@ func (u *update) As(s string) Querier {
 
 func (u *update) Set(k string, v interface{}) *update {
 	u.set = append(u.set, set{k, v})
+	return u
+}
+
+func (u *update) AutoNow(k string) *update {
+	u.set = append(u.set, set{k, time.Unix(time.Now().Unix(), 0)})
 	return u
 }
 
