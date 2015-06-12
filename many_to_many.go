@@ -119,11 +119,7 @@ func (m2m *ManyToMany) Has(data interface{}) (bool, error) {
 	query.Limit(1)
 
 	var count int
-	q, a, err := query.Expand(m2m.xr.Starter())
-	if err == nil {
-		err = m2m.xr.QueryRow(q, a...).Scan(&count)
-	}
-	if err != nil {
+	if err := m2m.xr.Fetch(query).Row(&count); err != nil {
 		return false, err
 	}
 	return count == 1, nil

@@ -148,12 +148,7 @@ func insert(xr faker, data interface{}) (int64, error) {
 		}
 	}
 
-	q, a, err := i.Expand(xr.Starter())
-	if err != nil {
-		return 0, err
-	}
-
-	r, err := xr.Exec(q, a...)
+	r, err := xr.Run(i)
 	if err != nil {
 		return 0, err
 	}
@@ -257,7 +252,8 @@ func selectRelation(xr faker, field string, data interface{}, columns ...string)
 		}
 
 		if c.Relation == table.OneToMany {
-			return xr.Fetch(Select(elect...).From(c.RelationTable.Name).Where(Eq(c.Name, pk))).All(v.Interface())
+			return xr.Fetch(
+				Select(elect...).From(c.RelationTable.Name).Where(Eq(c.Name, pk))).All(v.Interface())
 		} else {
 			var q Expression
 			if c.ThroughTable != nil {
@@ -327,12 +323,8 @@ func retrieve(xr faker, data interface{}, columns ...string) error {
 		return errors.New("scrud: select no columns: " + x.Type.Name())
 	}
 
-	q, a, err := Select(elect...).From(x.Name).Where(Eq(x.PrimaryKey.Name, pk)).Expand(xr.Starter())
+	err = xr.Fetch(Select(elect...).From(x.Name).Where(Eq(x.PrimaryKey.Name, pk))).Row(scans...)
 	if err != nil {
-		return err
-	}
-
-	if err := xr.QueryRow(q, a...).Scan(scans...); err != nil {
 		return err
 	}
 
@@ -401,11 +393,7 @@ func update(xr faker, data interface{}, columns ...string) error {
 		}
 	}
 
-	q, a, err := u.Expand(xr.Starter())
-	if err == nil {
-		_, err = xr.Exec(q, a...)
-	}
-
+	_, err = xr.Run(u)
 	return err
 }
 
@@ -433,11 +421,7 @@ func delete(xr faker, data interface{}) error {
 		return err
 	}
 
-	q, a, err := Delete(x.Name).Where(Eq(x.PrimaryKey.Name, pk)).Expand(xr.Starter())
-	if err == nil {
-		_, err = xr.Exec(q, a...)
-	}
-
+	_, err = xr.Run(Delete(x.Name).Where(Eq(x.PrimaryKey.Name, pk)))
 	return err
 }
 

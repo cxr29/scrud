@@ -62,12 +62,7 @@ func (s *Snapshot) Insert(data interface{}) (int64, time.Time, error) {
 	}
 	i.Values(values...)
 
-	q, a, err := i.Expand(s.xr.Starter())
-	if err != nil {
-		return 0, zt, err
-	}
-
-	r, err := s.xr.Exec(q, a...)
+	r, err := s.xr.Run(i)
 	if err != nil {
 		return 0, zt, err
 	}
@@ -127,12 +122,8 @@ func (s *Snapshot) Select(id int64, data interface{}, columns ...string) (time.T
 		scans = append(scans, c.Scan(v))
 	}
 
-	q, a, err := Select(elect...).From(tableName).Where(Eq(idName, id)).Expand(s.xr.Starter())
+	err = s.xr.Fetch(Select(elect...).From(tableName).Where(Eq(idName, id))).Row(scans...)
 	if err != nil {
-		return zt, err
-	}
-
-	if err := s.xr.QueryRow(q, a...).Scan(scans...); err != nil {
 		return zt, err
 	}
 
@@ -163,10 +154,6 @@ func (s *Snapshot) Delete(id int64, data interface{}) error {
 
 	tableName, idName, _ := format.SnapshotName(x.Type.Name(), x.Name)
 
-	q, a, err := Delete(tableName).Where(Eq(idName, id)).Limit(1).Expand(s.xr.Starter())
-	if err == nil {
-		_, err = s.xr.Exec(q, a...)
-	}
-
+	_, err = s.xr.Run(Delete(tableName).Where(Eq(idName, id)).Limit(1))
 	return err
 }
