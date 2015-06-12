@@ -221,49 +221,56 @@ func (r *Rows) types(i interface{}) ([]reflect.Type, map[int]*table.Column, erro
 			}
 		}
 	default:
-		switch t := reflect.TypeOf(i); t.Kind() {
-		case reflect.Bool,
-			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Float32, reflect.Float64:
+		t := reflect.TypeOf(i)
+		if t.Implements(table.TypeScanner) {
 			for j := range a {
 				a[j] = t
 			}
-		default:
-			switch t {
-			case table.TypeTime, table.TypeByteSlice:
+		} else {
+			switch t.Kind() {
+			case reflect.Bool,
+				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+				reflect.Float32, reflect.Float64:
 				for j := range a {
 					a[j] = t
 				}
 			default:
-				x, err := table.NewTable(i)
-				if err != nil {
-					return nil, nil, err
-				}
-				for k, v := range r.cols {
-					if _, ok := m[v]; ok {
-						return nil, nil, errors.New("scrud: map scan column repeat: " + v)
-					} else {
-						m[v] = struct{}{}
+				switch t {
+				case table.TypeTime, table.TypeByteSlice:
+					for j := range a {
+						a[j] = t
 					}
-
-					if c := x.FindColumn(v); c != nil {
-						if c.IsManyRelation() {
-							return nil, nil, errors.New("scrud: map scan many relation column: " + c.FullName())
-						}
-						for c.IsOneRelation() {
-							c = c.RelationTable.PrimaryKey
-						}
-						if c.HasEncoding() {
-							a[k] = table.TypeByteSlice
-							b[k] = c
-						} else if c.HasSetter() {
-							a[k] = c.SetType
+				default:
+					x, err := table.NewTable(i)
+					if err != nil {
+						return nil, nil, err
+					}
+					for k, v := range r.cols {
+						if _, ok := m[v]; ok {
+							return nil, nil, errors.New("scrud: map scan column repeat: " + v)
 						} else {
-							a[k] = c.Type
+							m[v] = struct{}{}
 						}
-					} else {
-						a[k] = table.TypeString
+
+						if c := x.FindColumn(v); c != nil {
+							if c.IsManyRelation() {
+								return nil, nil, errors.New("scrud: map scan many relation column: " + c.FullName())
+							}
+							for c.IsOneRelation() {
+								c = c.RelationTable.PrimaryKey
+							}
+							if c.HasEncoding() {
+								a[k] = table.TypeByteSlice
+								b[k] = c
+							} else if c.HasSetter() {
+								a[k] = c.SetType
+							} else {
+								a[k] = c.Type
+							}
+						} else {
+							a[k] = table.TypeString
+						}
 					}
 				}
 			}
@@ -304,7 +311,7 @@ func (r *Rows) mapScan(a []reflect.Type, b map[int]*table.Column) (map[string]in
 	return data, nil
 }
 
-// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/struct
+// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/sql.Scanner/struct
 //
 // if struct, setter column will be the setter type and not call the setter
 func (r *Rows) MapScan(i interface{}) (map[string]interface{}, error) {
@@ -321,7 +328,7 @@ func (r *Rows) MapScan(i interface{}) (map[string]interface{}, error) {
 
 // scan one row as map then close the rows
 //
-// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/struct
+// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/sql.Scanner/struct
 //
 // if struct, setter column will be the setter type and not call the setter
 func (r *Rows) MapOne(i interface{}) (map[string]interface{}, error) {
@@ -340,7 +347,7 @@ func (r *Rows) MapOne(i interface{}) (map[string]interface{}, error) {
 
 // scan rows as slice of map then close the rows
 //
-// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/struct
+// i: column type, nil/bool/ints/uints/floats/string/time.Time/[]byte/[]interface{}/map[string]interface{}/sql.Scanner/struct
 //
 // if struct, setter column will be the setter type and not call the setter
 func (r *Rows) MapAll(i interface{}) ([]map[string]interface{}, error) {
@@ -369,4 +376,18 @@ func (r *Rows) MapAll(i interface{}) ([]map[string]interface{}, error) {
 	}
 
 	return data, nil
+}
+
+func (r *Rows) Row(dest ...interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
+
+	defer r.Close()
+
+	if r.Next() {
+		return r.Rows.Scan(dest...)
+	} else {
+		return ErrNoRows
+	}
 }

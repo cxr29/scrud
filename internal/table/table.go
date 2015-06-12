@@ -739,7 +739,7 @@ func tableOf(t reflect.Type, x map[reflect.Type]*Table) (*Table, error) {
 		c.Name = tag
 
 		c.Valuer = f.Type.Implements(typeValuer)
-		c.Scanner = f.Type.Implements(typeScanner)
+		c.Scanner = f.Type.Implements(TypeScanner)
 
 		mn := "ScrudGet" + f.Name
 		if m, ok := table.Value.Type().MethodByName(mn); ok {
@@ -859,7 +859,7 @@ func isManyRelation(r int) bool {
 
 var (
 	typeValuer    = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
-	typeScanner   = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	TypeScanner   = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 	typeError     = reflect.TypeOf((*error)(nil)).Elem()
 	typeInterface = reflect.TypeOf((*interface{})(nil)).Elem()
 	TypeString    = reflect.TypeOf("")
