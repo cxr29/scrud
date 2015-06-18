@@ -34,6 +34,10 @@ func Select(a ...interface{}) *retrieve {
 	return r
 }
 
+func Count() *retrieve {
+	return Select(Expr("COUNT(*)"))
+}
+
 func (r *retrieve) Err() error {
 	return nil
 }
