@@ -4,7 +4,29 @@
 
 package query
 
-import "strings"
+import (
+	"strings"
+)
+
+func Ints2Interfaces(a []int) (b []interface{}) {
+	if a != nil {
+		b := make([]interface{}, len(a))
+		for k, v := range a {
+			b[k] = v
+		}
+	}
+	return
+}
+
+func Strings2Interfaces(a []string) (b []interface{}) {
+	if a != nil {
+		b := make([]interface{}, len(a))
+		for k, v := range a {
+			b[k] = v
+		}
+	}
+	return
+}
 
 func escape(s, a string) string {
 	if strings.ContainsAny(s, a) {

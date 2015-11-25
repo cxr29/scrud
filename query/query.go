@@ -178,6 +178,15 @@ func In(k string, a ...interface{}) Condition {
 	return Cond(quote(k)+" IN ("+repeatMarker(len(a))+")", a...)
 }
 
+// `k` IN (1,2,3,...)
+func InInts(k string, a ...int) Condition {
+	b := make([]string, len(a))
+	for i, j := range a {
+		b[i] = strconv.Itoa(j)
+	}
+	return Cond(quote(k) + " IN (" + strings.Join(b, ",") + ")")
+}
+
 // `k` BETWEEN ? AND ?
 func Between(k string, start, end interface{}) Condition {
 	return Cond(quote(k)+" BETWEEN ? AND ?", start, end)
