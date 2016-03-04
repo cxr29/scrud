@@ -44,7 +44,7 @@ import (
 	. "github.com/cxr29/scrud/query"
 )
 
-func starter(s string) Starter {
+func newStarter(s string) Starter {
 	switch s {
 	case "mysql":
 		return new(MySQL)
@@ -103,8 +103,10 @@ func insert(xr faker, data interface{}) (int64, error) {
 
 	i.Columns(cols...)
 
+	s := xr.Starter()
+
 	tile := func(v reflect.Value) ([]interface{}, error) {
-		now := time.Unix(time.Now().Unix(), 0)
+		now := getTime(s.DriverName())
 		a := make([]interface{}, 0, len(x.ColumnMap))
 		for _, c := range x.Columns {
 			if c.IsManyRelation() || c.AutoIncrement() {
@@ -148,19 +150,31 @@ func insert(xr faker, data interface{}) (int64, error) {
 		}
 	}
 
-	r, err := xr.Run(i)
-	if err != nil {
-		return 0, err
-	}
-
-	if cnt == -1 && x.AutoIncrement != nil {
-		ai, err := r.LastInsertId()
+	if cnt == -1 && x.AutoIncrement != nil && s.DriverName() == "postgres" {
+		q, a, err := i.Expand(s)
 		if err == nil {
-			err = x.AutoIncrement.SetValue(v, ai)
+			var ai int64
+			err = xr.QueryRow(q+" RETURNING "+s.FormatName(x.AutoIncrement.Name), a...).Scan(&ai)
+			if err == nil {
+				err = x.AutoIncrement.SetValue(v, ai)
+			}
 		}
 		if err != nil {
 			return 0, err
 		}
+		return 1, nil
+	}
+
+	r, err := xr.Run(i)
+	if err == nil && cnt == -1 && x.AutoIncrement != nil {
+		var ai int64
+		ai, err = r.LastInsertId()
+		if err == nil {
+			err = x.AutoIncrement.SetValue(v, ai)
+		}
+	}
+	if err != nil {
+		return 0, err
 	}
 
 	return r.RowsAffected()
@@ -374,7 +388,7 @@ func update(xr faker, data interface{}, columns ...string) error {
 			continue
 		}
 		if c.AutoNow() {
-			now := time.Unix(time.Now().Unix(), 0)
+			now := getTime(xr.Starter().DriverName())
 			if err := c.SetValue(v, now); err != nil {
 				return err
 			}
@@ -395,6 +409,14 @@ func update(xr faker, data interface{}, columns ...string) error {
 
 	_, err = xr.Run(u)
 	return err
+}
+
+func getTime(driverName string) time.Time {
+	t := time.Now()
+	if driverName != "postgres" {
+		t = time.Unix(t.Unix(), 0)
+	}
+	return t
 }
 
 func delete(xr faker, data interface{}) error {
@@ -477,7 +499,7 @@ func (db *DB) Begin() (*Tx, error) {
 
 // return a starter to expand query expression
 func (db *DB) Starter() Starter {
-	return starter(db.driverName)
+	return newStarter(db.driverName)
 }
 
 // insert struct, if have auto column data must be *struct
@@ -529,7 +551,7 @@ type Tx struct {
 }
 
 func (tx *Tx) Starter() Starter {
-	return starter(tx.driverName)
+	return newStarter(tx.driverName)
 }
 
 func (tx *Tx) Insert(data interface{}) (int64, error) {

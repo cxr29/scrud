@@ -51,7 +51,7 @@ func (e *expr) Expand(s Starter) (string, []interface{}, error) {
 			if err != nil {
 				return "", nil, err
 			}
-			a = append(a, "("+c+")")
+			a = append(a, c)
 			b = append(b, d...)
 		}
 	}

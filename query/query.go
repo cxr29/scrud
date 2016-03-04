@@ -120,13 +120,13 @@ func (_ *Postgres) DriverName() string {
 	return "postgres"
 }
 
+func (_ *Postgres) FormatName(s string) string {
+	return `"` + strings.Replace(s, `"`, `""`, -1) + `"`
+}
+
 func (x *Postgres) NextMarker() string {
 	*x++
 	return "$" + strconv.Itoa(int(*x))
-}
-
-func (_ *Postgres) FormatName(s string) string {
-	return `"` + strings.Replace(s, `"`, `""`, -1) + `"`
 }
 
 // sqlite starter to expand expression

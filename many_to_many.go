@@ -104,7 +104,7 @@ func (m2m *ManyToMany) Has(data interface{}) (bool, error) {
 		return false, err
 	}
 
-	query := Select(Expr("COUNT(*)"))
+	query := Count()
 	if m2m.column.ThroughTable != nil {
 		query.From(m2m.column.ThroughTable.Name).Where(
 			Eq(m2m.column.ThroughLeft.Name, left),
@@ -118,11 +118,11 @@ func (m2m *ManyToMany) Has(data interface{}) (bool, error) {
 	}
 	query.Limit(1)
 
-	var count int
-	if err := m2m.xr.Fetch(query).Row(&count); err != nil {
+	var n int
+	if err := m2m.xr.Fetch(query).Row(&n); err != nil {
 		return false, err
 	}
-	return count == 1, nil
+	return n == 1, nil
 }
 
 func (m2m *ManyToMany) set(empty bool, data ...interface{}) error {
