@@ -70,15 +70,6 @@ func (c *create) Expand(s Starter) (string, []interface{}, error) {
 	return buf.String(), args, nil
 }
 
-func (c *create) Alias() string {
-	return c.alias
-}
-
-func (c *create) As(s string) Querier {
-	c.alias = s
-	return c
-}
-
 func (c *create) Columns(a ...string) *create {
 	c.columns = append(c.columns, a...)
 	return c

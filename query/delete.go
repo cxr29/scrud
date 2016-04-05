@@ -73,15 +73,6 @@ func (d *delete) Expand(s Starter) (string, []interface{}, error) {
 	return buf.String(), args, nil
 }
 
-func (d *delete) Alias() string {
-	return d.alias
-}
-
-func (d *delete) As(s string) Querier {
-	d.alias = s
-	return d
-}
-
 func (d *delete) Where(a ...Condition) *delete {
 	d.where = append(d.where, a...)
 	return d

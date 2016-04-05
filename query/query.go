@@ -28,7 +28,8 @@
 //  	Eq("Column4", true),                            // -- join on when Condition
 //  	Cond("`Table1.Column1`+`Table3.Column1`>?", 1), // -- AND
 //  	...
-//  ).FullJoin(Select().From(`Table4`).As("a"), // (SELECT * FROM `Table4`) AS `a` -- join subquery
+//  ).FullJoin(
+//  	As(Select().From(`Table4`), "a"), // (SELECT * FROM `Table4`) AS `a` -- join expression as subquery
 //  	...
 //  ).Where( // -- AND
 //  	In("Column5", 2, 3, 4),    // `Column5` IN (?,?,?) -- 2,3,4
@@ -90,12 +91,6 @@ type Condition interface {
 	And(...Condition) Condition
 	Or(...Condition) Condition
 	Not() Condition
-}
-
-type Querier interface {
-	Expression
-	Alias() string
-	As(string) Querier // as subquery
 }
 
 // mysql starter to expand expression
@@ -225,4 +220,9 @@ func Asc(k string) Expression {
 // `k` DESC
 func Desc(k string) Expression {
 	return Expr(quote(k) + " DESC")
+}
+
+// (?) AS `k`
+func As(v interface{}, k string) Expression {
+	return Expr("(?) AS "+quote(k), v)
 }

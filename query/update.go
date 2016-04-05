@@ -104,15 +104,6 @@ func (u *update) Expand(s Starter) (string, []interface{}, error) {
 	return buf.String(), args, nil
 }
 
-func (u *update) Alias() string {
-	return u.alias
-}
-
-func (u *update) As(s string) Querier {
-	u.alias = s
-	return u
-}
-
 func (u *update) Set(k string, v interface{}) *update {
 	u.set = append(u.set, set{k, v})
 	return u

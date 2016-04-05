@@ -78,18 +78,15 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 			switch i := v.(type) {
 			case string:
 				buf.WriteString(s.FormatName(i))
-			case Querier:
+			case Expression:
 				e, a, err := i.Expand(s)
 				if err != nil {
 					return "", nil, err
 				}
-				buf.WriteByte('(')
 				buf.WriteString(e)
-				buf.WriteString(") AS ")
-				buf.WriteString(s.FormatName(i.Alias()))
 				args = append(args, a...)
 			default:
-				return "", nil, errors.New("retrieve: from must be string or querier")
+				return "", nil, errors.New("retrieve: from must be string or expression")
 			}
 			if k < n-1 {
 				buf.WriteByte(',')
@@ -108,18 +105,15 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 			switch i := j.table.(type) {
 			case string:
 				buf.WriteString(s.FormatName(i))
-			case Querier:
+			case Expression:
 				e, a, err := i.Expand(s)
 				if err != nil {
 					return "", nil, err
 				}
-				buf.WriteByte('(')
 				buf.WriteString(e)
-				buf.WriteString(") AS ")
-				buf.WriteString(s.FormatName(i.Alias()))
 				args = append(args, a...)
 			default:
-				return "", nil, errors.New("retrieve: join must be string or querier")
+				return "", nil, errors.New("retrieve: join must be string or expression")
 			}
 
 			using, on := make([]string, 0), make([]Condition, 0)
@@ -240,15 +234,6 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 	}
 
 	return buf.String(), args, nil
-}
-
-func (r *retrieve) Alias() string {
-	return r.alias
-}
-
-func (r *retrieve) As(s string) Querier {
-	r.alias = s
-	return r
 }
 
 // string or expression
