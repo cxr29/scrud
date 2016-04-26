@@ -46,7 +46,7 @@ func escapeRegexp(s string) string {
 	return escape(s, `\.+*?()|[]{}^$`)
 }
 
-func escapeLike(s string) string {
+func EscapeLike(s string) string {
 	return escape(s, `\_%`)
 }
 

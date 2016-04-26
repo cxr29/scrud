@@ -194,17 +194,17 @@ func Like(k, v string) Condition {
 
 // `k` LIKE %?%
 func Contains(k, v string) Condition {
-	return Like(k, "%"+escapeLike(v)+"%")
+	return Like(k, "%"+EscapeLike(v)+"%")
 }
 
 // `k` LIKE ?%
 func HasPrefix(k, v string) Condition {
-	return Like(k, escapeLike(v)+"%")
+	return Like(k, EscapeLike(v)+"%")
 }
 
 // `k` LIKE %?
 func HasSuffix(k, v string) Condition {
-	return Like(k, "%"+escapeLike(v))
+	return Like(k, "%"+EscapeLike(v))
 }
 
 // `k` IS NULL
