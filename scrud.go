@@ -56,7 +56,7 @@ func newStarter(s string) Starter {
 	return nil
 }
 
-func insert(xr faker, data interface{}) (int64, error) {
+func insert(auto bool, xr faker, data interface{}) (int64, error) {
 	cnt, ptr := -1, false
 
 	v := reflect.ValueOf(data)
@@ -92,7 +92,7 @@ func insert(xr faker, data interface{}) (int64, error) {
 
 	cols := make([]string, 0)
 	for _, c := range x.Columns {
-		if c.IsManyRelation() || c.AutoIncrement() {
+		if c.IsManyRelation() || (auto && c.AutoIncrement()) {
 			continue
 		}
 		cols = append(cols, c.Name)
@@ -104,15 +104,14 @@ func insert(xr faker, data interface{}) (int64, error) {
 	i.Columns(cols...)
 
 	s := xr.Starter()
-
+	now := getTime(s.DriverName())
 	tile := func(v reflect.Value) ([]interface{}, error) {
-		now := getTime(s.DriverName())
 		a := make([]interface{}, 0, len(x.ColumnMap))
 		for _, c := range x.Columns {
-			if c.IsManyRelation() || c.AutoIncrement() {
+			if c.IsManyRelation() || (auto && c.AutoIncrement()) {
 				continue
 			}
-			if c.AutoNowAdd() || c.AutoNow() {
+			if auto && (c.AutoNowAdd() || c.AutoNow()) {
 				if err := c.SetValue(v, now); err != nil { // cxr? defer set value
 					return nil, err
 				} else {
@@ -150,11 +149,13 @@ func insert(xr faker, data interface{}) (int64, error) {
 		}
 	}
 
-	if cnt == -1 && x.AutoIncrement != nil && s.DriverName() == "postgres" {
+	autoIncrement := auto && cnt == -1 && x.AutoIncrement != nil
+	if autoIncrement && s.DriverName() == "postgres" {
 		q, a, err := i.Expand(s)
 		if err == nil {
 			var ai int64
-			err = xr.QueryRow(q+" RETURNING "+s.FormatName(x.AutoIncrement.Name), a...).Scan(&ai)
+			err = xr.QueryRow(
+				q+" RETURNING "+s.FormatName(x.AutoIncrement.Name), a...).Scan(&ai)
 			if err == nil {
 				err = x.AutoIncrement.SetValue(v, ai)
 			}
@@ -166,7 +167,7 @@ func insert(xr faker, data interface{}) (int64, error) {
 	}
 
 	r, err := xr.Run(i)
-	if err == nil && cnt == -1 && x.AutoIncrement != nil {
+	if err == nil && autoIncrement {
 		var ai int64
 		ai, err = r.LastInsertId()
 		if err == nil {
@@ -506,7 +507,11 @@ func (db *DB) Starter() Starter {
 //
 // batch insert if data is array or slice and not set auto increment column
 func (db *DB) Insert(data interface{}) (int64, error) {
-	return insert(db, data)
+	return insert(true, db, data)
+}
+
+func (db *DB) Load(data interface{}) (int64, error) {
+	return insert(false, db, data)
 }
 
 // select by primary key, data must be *struct
@@ -555,7 +560,11 @@ func (tx *Tx) Starter() Starter {
 }
 
 func (tx *Tx) Insert(data interface{}) (int64, error) {
-	return insert(tx, data)
+	return insert(true, tx, data)
+}
+
+func (tx *Tx) Load(data interface{}) (int64, error) {
+	return insert(false, tx, data)
 }
 
 func (tx *Tx) Select(data interface{}, columns ...string) error {
