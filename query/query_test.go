@@ -58,7 +58,7 @@ func TestRetrieve(t *testing.T) {
 		).RightJoin(
 			"t4", Or(Cond("`t3.c6`=`t4.c7`"), Cond("`t3.c8`>`t4.c9`")),
 		).FullJoin(
-			Select().From("t5").As("t6"),
+			As(Select().From("t5"), "t6"),
 		).Where(
 			Eq("t1.c1", 1),
 			In("t2..c2", "v1", "v2", "v3"),
@@ -80,7 +80,7 @@ func TestRetrieve(t *testing.T) {
 			"postgres": `SELECT "t1"."c1","t2.c2",COUNT(DISTINCT "t3"."c3") AS "count" FROM "t1","t2" LEFT JOIN "t3" USING ("c4","c5") RIGHT JOIN "t4" ON ("t3"."c6"="t4"."c7") OR ("t3"."c8">"t4"."c9") FULL JOIN (SELECT * FROM "t5") AS "t6" WHERE ("t1"."c1"=$1) AND ("t2.c2" IN ($2,$3,$4)) AND ("t3"."c6" IS NULL) GROUP BY "t4"."c7","t6"."c6" % $5 HAVING NOT ("count"<=$6) ORDER BY "t3"."c8" DESC,EXTRACT(YEAR FROM "t4"."c9") LIMIT 4 OFFSET 5`,
 			"sqlite":   `SELECT "t1"."c1","t2.c2",COUNT(DISTINCT "t3"."c3") AS "count" FROM "t1","t2" LEFT JOIN "t3" USING ("c4","c5") RIGHT JOIN "t4" ON ("t3"."c6"="t4"."c7") OR ("t3"."c8">"t4"."c9") FULL JOIN (SELECT * FROM "t5") AS "t6" WHERE ("t1"."c1"=?) AND ("t2.c2" IN (?,?,?)) AND ("t3"."c6" IS NULL) GROUP BY "t4"."c7","t6"."c6" % ? HAVING NOT ("count"<=?) ORDER BY "t3"."c8" DESC,EXTRACT(YEAR FROM "t4"."c9") LIMIT 4 OFFSET 5`,
 		}[s.DriverName()] {
-			t.Fatal(s.DriverName(), "retrieve query")
+			t.Fatal(s.DriverName(), "retrieve query", q)
 		}
 		if len(a) != 6 ||
 			a[0].(int) != 1 ||

@@ -52,7 +52,7 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 			var x Expression
 			switch i := v.(type) {
 			case string:
-				x = Expr(quote(i))
+				x = Expr(BackQuote(i))
 			case Expression:
 				x = i
 			default:
@@ -167,7 +167,7 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 			var x Expression
 			switch i := v.(type) {
 			case string:
-				x = Expr(quote(i))
+				x = Expr(BackQuote(i))
 			case Expression:
 				x = i
 			default:
@@ -201,7 +201,7 @@ func (r *retrieve) Expand(s Starter) (string, []interface{}, error) {
 			var x Expression
 			switch i := v.(type) {
 			case string:
-				x = Expr(quote(i))
+				x = Expr(BackQuote(i))
 			case Expression:
 				x = i
 			default:

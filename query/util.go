@@ -42,7 +42,7 @@ func escape(s, a string) string {
 	return s
 }
 
-func escapeRegexp(s string) string {
+func EscapeRegexp(s string) string {
 	return escape(s, `\.+*?()|[]{}^$`)
 }
 
@@ -50,35 +50,22 @@ func EscapeLike(s string) string {
 	return escape(s, `\_%`)
 }
 
-func quote(s string) string {
-	/*
-		// cxr? whether or not
-		a, dot := []rune(s), 0
-		for i, n := 0, len(a); i < n; i++ {
-			if r := a[i]; r == '`' {
-				if j := i + 1; j < n && a[j] == r {
-					i = j
-				} else {
-					panic("back quote must be double")
-				}
-			} else if r == '.' {
-				if j := i + 1; j < n && a[j] == r {
-					i = j
-				} else {
-					dot++
-				}
-			} else if r == '\x00' {
-				panic("not allow null")
-			}
-		}
-		if dot > 1 {
-			panic("too many dot")
-		}
-	*/
-	return "`" + s + "`"
+func quote(s, q string) string {
+	if strings.Contains(s, q) {
+		s = strings.Replace(s, q, q+q, -1)
+	}
+	return q + s + q
 }
 
-func repeatMarker(n int) string {
+func DoubleQuote(s string) string {
+	return quote(s, `"`)
+}
+
+func BackQuote(s string) string {
+	return quote(s, "`")
+}
+
+func RepeatMarker(n int) string {
 	s := strings.Repeat("?,", n)
 	if n := len(s); n > 0 {
 		s = s[:n-1]

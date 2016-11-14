@@ -101,7 +101,7 @@ func (_ *MySQL) DriverName() string {
 }
 
 func (_ *MySQL) FormatName(s string) string {
-	return "`" + strings.Replace(s, "`", "``", -1) + "`"
+	return BackQuote(s)
 }
 
 func (_ *MySQL) NextMarker() string {
@@ -116,7 +116,7 @@ func (_ *Postgres) DriverName() string {
 }
 
 func (_ *Postgres) FormatName(s string) string {
-	return `"` + strings.Replace(s, `"`, `""`, -1) + `"`
+	return DoubleQuote(s)
 }
 
 func (x *Postgres) NextMarker() string {
@@ -132,7 +132,7 @@ func (_ *Sqlite) DriverName() string {
 }
 
 func (_ *Sqlite) FormatName(s string) string {
-	return `"` + strings.Replace(s, `"`, `""`, -1) + `"`
+	return DoubleQuote(s)
 }
 
 func (_ *Sqlite) NextMarker() string {
@@ -144,33 +144,33 @@ func Eq(k string, v interface{}) Condition {
 	if v == nil {
 		return IsNull(k)
 	} else {
-		return Cond(quote(k)+"=?", v)
+		return Cond(BackQuote(k)+"=?", v)
 	}
 }
 
 // `k`<?
 func Lt(k string, v interface{}) Condition {
-	return Cond(quote(k)+"<?", v)
+	return Cond(BackQuote(k)+"<?", v)
 }
 
 // `k`<=?
 func Le(k string, v interface{}) Condition {
-	return Cond(quote(k)+"<=?", v)
+	return Cond(BackQuote(k)+"<=?", v)
 }
 
 // `k`>?
 func Gt(k string, v interface{}) Condition {
-	return Cond(quote(k)+">?", v)
+	return Cond(BackQuote(k)+">?", v)
 }
 
 // `k`>=?
 func Ge(k string, v interface{}) Condition {
-	return Cond(quote(k)+">=?", v)
+	return Cond(BackQuote(k)+">=?", v)
 }
 
 // `k` IN (?,...)
 func In(k string, a ...interface{}) Condition {
-	return Cond(quote(k)+" IN ("+repeatMarker(len(a))+")", a...)
+	return Cond(BackQuote(k)+" IN ("+RepeatMarker(len(a))+")", a...)
 }
 
 // `k` IN (1,2,3,...)
@@ -179,17 +179,17 @@ func InInts(k string, a ...int) Condition {
 	for i, j := range a {
 		b[i] = strconv.Itoa(j)
 	}
-	return Cond(quote(k) + " IN (" + strings.Join(b, ",") + ")")
+	return Cond(BackQuote(k) + " IN (" + strings.Join(b, ",") + ")")
 }
 
 // `k` BETWEEN ? AND ?
 func Between(k string, start, end interface{}) Condition {
-	return Cond(quote(k)+" BETWEEN ? AND ?", start, end)
+	return Cond(BackQuote(k)+" BETWEEN ? AND ?", start, end)
 }
 
 // `k` LIKE ?
 func Like(k, v string) Condition {
-	return Cond(quote(k)+" LIKE ?", v)
+	return Cond(BackQuote(k)+" LIKE ?", v)
 }
 
 // `k` LIKE %?%
@@ -209,20 +209,20 @@ func HasSuffix(k, v string) Condition {
 
 // `k` IS NULL
 func IsNull(k string) Condition {
-	return Cond(quote(k) + " IS NULL")
+	return Cond(BackQuote(k) + " IS NULL")
 }
 
 // `k` ASC
 func Asc(k string) Expression {
-	return Expr(quote(k) + " ASC")
+	return Expr(BackQuote(k) + " ASC")
 }
 
 // `k` DESC
 func Desc(k string) Expression {
-	return Expr(quote(k) + " DESC")
+	return Expr(BackQuote(k) + " DESC")
 }
 
 // (?) AS `k`
 func As(v interface{}, k string) Expression {
-	return Expr("(?) AS "+quote(k), v)
+	return Expr("(?) AS "+BackQuote(k), v)
 }
