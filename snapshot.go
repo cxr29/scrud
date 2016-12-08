@@ -41,7 +41,7 @@ func (s *Snapshot) Insert(data interface{}) (int64, time.Time, error) {
 		return 0, zt, err
 	}
 
-	tableName, _, timeName := format.SnapshotName(x.Type.Name(), x.Name)
+	tableName, idName, timeName := format.SnapshotName(x.Type.Name(), x.Name)
 
 	i := Insert(tableName)
 
@@ -61,6 +61,18 @@ func (s *Snapshot) Insert(data interface{}) (int64, time.Time, error) {
 		}
 	}
 	i.Values(values...)
+
+	if ss := s.xr.Starter(); ss.DriverName() == "postgres" {
+		var ai int64
+		if q, a, err := i.Expand(ss); err == nil {
+			err = s.xr.QueryRow(
+				q+" RETURNING "+ss.FormatName(idName), a...).Scan(&ai)
+		}
+		if err != nil {
+			return 0, zt, err
+		}
+		return ai, st, nil
+	}
 
 	r, err := s.xr.Run(i)
 	if err != nil {
